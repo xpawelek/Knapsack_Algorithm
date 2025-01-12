@@ -3,13 +3,14 @@ from math import gcd
 
 
 #generating super-increasing sequence
-def generate_super_increasing_sequence(n):
+def generate_super_increasing_sequence(n: int) -> list:
     sequence = [randint(1, 100)]
     while len(sequence) < n:
         sequence.append(sum(sequence) + randint(1, 100))
     return sequence
 
-def find_inverse_modular(m, w):
+
+def find_inverse_modular(m: int, w: int) -> int:
     x = [1, 0]
     y = [0, 1]
     r = [m, w]
@@ -30,14 +31,14 @@ def find_inverse_modular(m, w):
         counter += 1
     return y[counter]
 
+
 #generating public key - formula: ei = w * seq[i] (mod m)
-def generate_public_key(seq, m, w):
+def generate_public_key(seq: list, m: int, w:int) -> list:
     return [w * elem % m for elem in seq]
 
 
-
 # function to ecrypt message using public key
-def encrypt_message(binary_message, public_key, n):
+def encrypt_message(binary_message: str, public_key: list, n: int) -> list:
     binary_message = binary_message.strip().replace(" ", "")
     binary_message = (n - len(binary_message) % n) * '0' + binary_message #adding 0's if len(mes) % n != 0, equal groups
     groups = []
@@ -56,8 +57,9 @@ def encrypt_message(binary_message, public_key, n):
 
     return encrypted_message
 
+
 #function to decrypt message using private_key
-def decrypt_message(encrypted_message, private_key):
+def decrypt_message(encrypted_message: list, private_key: dict) -> str:
     #finding seq_prim using forumla: Ci` = Ci * w (mod m), w - modular inverse
     seq_prim = [elem * private_key["modular_inverse"] % private_key["m"] for elem in encrypted_message]
 
@@ -114,7 +116,7 @@ def decrypt_message(encrypted_message, private_key):
 
 
 #converting binary to unicode text
-def on_convert(binary_input, encoding='utf-8'):
+def on_convert(binary_input: str, encoding='utf-8') -> str:
     binary_clean = ''.join(filter(lambda x: x in '01', binary_input))
 
     if len(binary_clean) % 8 != 0:
@@ -133,8 +135,9 @@ def on_convert(binary_input, encoding='utf-8'):
 
     return text
 
+
 #converting text to binary
-def on_encode(text_input, encoding='utf-8', separator=' '):
+def on_encode(text_input: str, encoding='utf-8', separator=' ') -> str:
     try:
         byte_array = text_input.encode(encoding)
     except UnicodeEncodeError as e:
@@ -147,7 +150,8 @@ def on_encode(text_input, encoding='utf-8', separator=' '):
 
     return binary_string
 
-def remove_leading_zero_bytes(binary_str):
+
+def remove_leading_zero_bytes(binary_str: str) -> str:
     byte_chunks = [binary_str[i:i + 8] for i in range(0, len(binary_str), 8)]
 
     while byte_chunks and byte_chunks[0] == '00000000':
@@ -157,37 +161,43 @@ def remove_leading_zero_bytes(binary_str):
 
 
 if __name__ == "__main__":
-    size = randint(10, 100) #size of super increasing seq
-    sequence = generate_super_increasing_sequence(size)
-    m = sum(sequence) + randint(1, 10) #num greater than sum of super increasing seq
-    w = None
+    try:
+        size = randint(10, 100) #size of super increasing seq
+        sequence = generate_super_increasing_sequence(size)
+        m = sum(sequence) + randint(1, 10) #num greater than sum of super increasing seq
 
-    #calculating w, which is num less than m and gives gcd(w,m) equal 1
-    while True:
-        w = randint(2, m - 1)
-        if gcd(m, randint(2, m - 1)) == 1:
-            break
+        #calculating w, which is num less than m and gives gcd(w,m) equal 1
+        w = None
+        attempts = 0
+        while True:
+            w_candidate = randint(2, m - 1)
+            if gcd(m, w_candidate) == 1:
+                w = w_candidate
+                break
+            attempts += 1
+            if attempts > 1000:
+                raise Exception("Generating w, which is num less than m and gives gcd(w,m) equal 1 has failed after 1000 attempts.")
 
-    print(f"m = {m}\n w = {w}\n gcd(m,w) = {gcd(m,w)}")
+        #print(f"m = {m}\n w = {w}\n gcd(m,w) = {gcd(m,w)}")
 
-    #finding modular inverse using extended Eucleadian algorithm
-    modular_inverse = find_inverse_modular(m, w)
+        #finding modular inverse using extended Eucleadian algorithm
+        modular_inverse = find_inverse_modular(m, w)
 
-    public_key = generate_public_key(sequence,  m, w)
-    private_key = {
-        "seq": sequence,
-        "m": m,
-        "modular_inverse": modular_inverse
-    }
-
-    while 1:
-        message = input("Enter message to encrypt: ")
-        message = on_encode(message, separator=" ")
-        encrypted_message = encrypt_message(message, public_key, size)
-        print(f"Encrypted message: {encrypted_message}")
-        message = decrypt_message(encrypted_message, private_key)
-        print(f"Decrypted message: {message}")
-
+        public_key = generate_public_key(sequence,  m, w)
+        private_key = {
+            "seq": sequence,
+            "m": m,
+            "modular_inverse": modular_inverse
+        }
+        while 1:
+            message = input("Enter message to encrypt:")
+            message = on_encode(message, separator=" ")
+            encrypted_message = encrypt_message(message, public_key, size)
+            print(f"Encrypted message: {encrypted_message}\n")
+            message = decrypt_message(encrypted_message, private_key)
+            print(f"Decrypted message: {message}\n")
+    except Exception as error:
+        print(f"An error has occured: {error}")
 
 '''
 1. super rosnacy ciag
